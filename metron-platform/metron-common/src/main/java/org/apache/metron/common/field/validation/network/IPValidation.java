@@ -24,6 +24,7 @@ import org.apache.metron.common.dsl.Predicate2StellarFunction;
 import org.apache.metron.common.dsl.Stellar;
 import org.apache.metron.common.field.validation.FieldValidation;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -65,6 +66,26 @@ public class IPValidation implements FieldValidation, Predicate<List<Object>> {
         }
         catch(Exception e) {
           return DEFAULT;
+        }
+      }
+    }
+    public static List<IPType> get(List<String> types) {
+      List<IPType> returnList = new ArrayList<>();
+      if(types == null) {
+        returnList.add(DEFAULT);
+        return returnList;
+      }
+      else {
+        try {
+          for (String type : types) {
+            returnList.add(IPType.valueOf(type));
+          }
+          return returnList;
+        }
+        catch(Exception e) {
+          returnList = new ArrayList<>();
+          returnList.add(DEFAULT);
+          return returnList;
         }
       }
     }
@@ -121,13 +142,16 @@ public class IPValidation implements FieldValidation, Predicate<List<Object>> {
                         , Map<String, Object> globalConfig
                         , Context context
                         ) {
-    IPType type = IPType.get(Config.TYPE.get(validationConfig, String.class));
+    List<IPType> types = IPType.get(Config.TYPE.get(validationConfig, List.class));
+
     for(Object o : input.values()) {
-      if(o != null && !type.isValid(o.toString())) {
-        return false;
+      for (IPType type : types) {
+        if(o != null && type.isValid(o.toString())) {
+          return true;
+        }
       }
     }
-    return true;
+    return false;
   }
 
   @Override
