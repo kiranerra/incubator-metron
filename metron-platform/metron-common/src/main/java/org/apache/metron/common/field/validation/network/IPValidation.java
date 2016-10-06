@@ -18,6 +18,7 @@
 
 package org.apache.metron.common.field.validation.network;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.metron.common.dsl.Context;
 import org.apache.metron.common.dsl.Predicate2StellarFunction;
@@ -136,23 +137,27 @@ public class IPValidation implements FieldValidation, Predicate<List<Object>> {
     }
     return type.isValid(ip.toString());
   }
-  @Override
-  public boolean isValid( Map<String, Object> input
-                        , Map<String, Object> validationConfig
-                        , Map<String, Object> globalConfig
-                        , Context context
-                        ) {
-    List<IPType> types = IPType.get(Config.TYPE.get(validationConfig, List.class));
-
-    for(Object o : input.values()) {
-      for (IPType type : types) {
-        if(o != null && type.isValid(o.toString())) {
-          return true;
+    @Override
+    public boolean isValid( Map<String, Object> input
+            , Map<String, Object> validationConfig
+            , Map<String, Object> globalConfig
+            , Context context
+    ) {
+        List<IPType> types;
+        try {
+            types = ImmutableList.of(IPType.get(Config.TYPE.get(validationConfig, String.class)));
+        }catch (ClassCastException e) {
+            types = IPType.get(Config.TYPE.get(validationConfig, List.class));
         }
-      }
+        for(Object o : input.values()) {
+            for (IPType type : types) {
+                if(o != null && type.isValid(o.toString())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
-    return false;
-  }
 
   @Override
   public void initialize(Map<String, Object> validationConfig, Map<String, Object> globalConfig) {

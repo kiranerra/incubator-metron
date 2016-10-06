@@ -18,6 +18,7 @@
 
 package org.apache.metron.common.field.validation.network;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.adrianwalker.multilinestring.Multiline;
 import org.apache.metron.common.field.validation.BaseValidationTest;
@@ -59,6 +60,57 @@ public class IPValidationTest extends BaseValidationTest {
   public static String validWithMultipleFields;
   public static String validWithMultipleFields_MQL = "IS_IP(field1, 'IPV4') && IS_IP(field2, 'IPV4')";
 
+    /**
+     {
+     "fieldValidations" : [
+     {
+     "input" : [ "field1", "field2" ]
+     ,"validation" : "IP"
+     ,"config" : {
+     "type" : ["IPV4", "IPV6"]
+     }
+     }
+     ]
+     }
+     */
+    @Multiline
+    public static String validWithMultipleTypes;
+    public static String validWithMultipleTypes_MQL = "IS_IP(field1, 'IPV4') && IS_IP(field2, 'IPV4')";
+
+    /**
+     {
+     "fieldValidations" : [
+     {
+     "input" : [ "field1", "field2" ]
+     ,"validation" : "IP"
+     ,"config" : {
+     "type" : ["IPV4"]
+     }
+     }
+     ]
+     }
+     */
+    @Multiline
+    public static String validWithIPV4Type;
+    public static String validWithIPV4Type_MQL = "IS_IP(field1, 'IPV4') && IS_IP(field2, 'IPV4')";
+
+    /**
+     {
+     "fieldValidations" : [
+     {
+     "input" : [ "field1", "field2" ]
+     ,"validation" : "IP"
+     ,"config" : {
+     "type" : ["IPV6"]
+     }
+     }
+     ]
+     }
+     */
+    @Multiline
+    public static String validWithIPV6Type;
+    public static String validWithIPV6Type_MQL = "IS_IP(field1, 'IPV6') && IS_IP(field2, 'IPV6')";
+
   @Test
   public void positiveTest_single() throws IOException {
     Assert.assertTrue(execute(validWithSingleField, ImmutableMap.of("field1", "127.0.0.1")));
@@ -82,4 +134,28 @@ public class IPValidationTest extends BaseValidationTest {
     Assert.assertFalse(execute(validWithMultipleFields, ImmutableMap.of("field1", 1, "field2", "192.168.1")));
     Assert.assertFalse(runPredicate(validWithMultipleFields_MQL, ImmutableMap.of("field1", 1, "field2", "192.168.1")));
   }
+
+    @Test
+    public void positiveTest_multiple_IPV4_Type_List() throws IOException {
+        Assert.assertTrue(execute(validWithIPV4Type, ImmutableMap.of("field1", "192.168.0.1", "field2", "127.0.0.2")));
+        Assert.assertTrue(runPredicate(validWithIPV4Type_MQL, ImmutableMap.of("field1", "192.168.0.1", "field2", "127.0.0.2")));
+    }
+
+    @Test
+    public void positiveTest_multiple_IPV6_Type_List() throws IOException {
+        Assert.assertTrue(execute(validWithIPV6Type, ImmutableMap.of("field1", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", "field2", "2001:db8:85a3::8a2e:370:7335")));
+        Assert.assertTrue(runPredicate(validWithIPV6Type_MQL, ImmutableMap.of("field1", "2001:0db8:85a3:0000:0000:8a2e:0370:7334", "field2", "2001:db8:85a3::8a2e:370:7335")));
+    }
+
+    @Test
+    public void positiveTest_multiple_Type_List() throws IOException {
+        Assert.assertTrue(execute(validWithMultipleTypes, ImmutableMap.of("field1", "192.168.0.1", "field2", "127.0.0.2")));
+        Assert.assertTrue(runPredicate(validWithMultipleTypes_MQL, ImmutableMap.of("field1", "192.168.0.1", "field2", "127.0.0.2")));
+    }
+
+    @Test
+    public void negativeTest_multiple_Type_List() throws IOException {
+        Assert.assertFalse(execute(validWithMultipleTypes, ImmutableMap.of("field1", 1, "field2", "192.168.1")));
+        Assert.assertFalse(runPredicate(validWithMultipleTypes_MQL, ImmutableMap.of("field1", 1, "field2", "192.168.1")));
+    }
 }
